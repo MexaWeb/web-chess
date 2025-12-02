@@ -1,0 +1,22 @@
+body {
+    background-color: #1d1d1d;
+}
+
+
+main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    height: 100vh;
+}
+
+
+
+
+#checkboard {
+    max-width: min-content;
+    height: 70vh;
+    aspect-ratio: 1/1;
+}
