@@ -15,7 +15,7 @@ main {
 
 
 
-#checkboard {
+#chessboard {
     max-width: min-content;
     height: 70vh;
     aspect-ratio: 1/1;
