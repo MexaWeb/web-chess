@@ -154,14 +154,6 @@ function centerText(ctx, string, x, y, width, height, color, stroke) {
     ctx.fillText(string, textx, texty);
 }
 
-function showMoves(canvas, ctx, cells) {
-    for (let cell = 0; cell < cells.length; cell++) {
-        const coordinates = cells[cell];
-        drawCircle(canvas, ctx, coordinates[0], coordinates[1], "rgba(0, 0, 0, 0.2)")
-
-    }
-}
-
 
 
 
@@ -215,7 +207,6 @@ function movePiece(chessboard, pieceX, pieceY, targetX, targetY) {
 
 
 
-
 function getPieceMoveCells(chessboard, piece, x, y) {
     const moveCells = [];
 
@@ -227,7 +218,9 @@ function getPieceMoveCells(chessboard, piece, x, y) {
 
     if (piece.player === "black") {
         vectors = vectors.map(([dx, dy]) => [-dx, -dy]);
-        attackVectors = attackVectors.map(([dx, dy]) => [-dx, -dy]);
+        if (attackVectors !== undefined) {
+            attackVectors = attackVectors.map(([dx, dy]) => [-dx, -dy]);
+        }
 
     }
 
@@ -247,7 +240,7 @@ function getPieceMoveCells(chessboard, piece, x, y) {
 
 
             if (target !== 0 && target.player === enemy) {
-                if (piece.attackVectors !== undefined) {
+                if (piece.pieceName != "pawn") {
                     moveCells.push([cellX, cellY]);
                 }
                 break;
@@ -291,12 +284,6 @@ function getPieceMoveCells(chessboard, piece, x, y) {
 
 
 
-
-
-                moveCells.push([cellX, cellY]);
-
-
-
                 if (!moves.repeat) break;
                 steps++;
             }
@@ -306,7 +293,13 @@ function getPieceMoveCells(chessboard, piece, x, y) {
     return moveCells;
 }
 
+function showMoves(canvas, ctx, cells) {
+    for (let cell = 0; cell < cells.length; cell++) {
+        const coordinates = cells[cell];
+        drawCircle(canvas, ctx, coordinates[0], coordinates[1], "rgba(0, 0, 0, 0.2)")
 
+    }
+}
 
 window.addEventListener('resize', function (e) {
     render(chessboardCanvas, ctx, chessboard)
