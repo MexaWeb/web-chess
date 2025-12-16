@@ -6,6 +6,8 @@ const ctx = chessboardCanvas.getContext("2d");
 let selectedPiece
 let activeMoveCells = []
 let turn = "white"
+let check = undefined
+
 
 const numPieceMap = {
     0: "",
@@ -80,9 +82,20 @@ class Piece {
         this.player = player
         this.moved = false
     }
+	clone() {
+		const copy = new Piece(this.pieceName, this.player)
+		copy.moved = this.moved
+		return copy
+	}
 }
 
-
+function cloneBoard(board) {
+    return board.map(row =>
+        row.map(cell =>
+            cell === 0 ? 0 : cell.clone()
+        )
+    )
+}
 
 
 function render(canvas, ctx, chessboard) {
@@ -154,9 +167,6 @@ function centerText(ctx, string, x, y, width, height, color, stroke) {
     ctx.fillText(string, textx, texty);
 }
 
-
-
-
 function pixelToCellCoordinates(canvas, x, y) {
     let cellX = Math.ceil(x / canvas.width * 8)
     let cellY = Math.ceil(y / canvas.height * 8)
@@ -170,8 +180,6 @@ function cellToPixelCoordinates(canvas, cellX, cellY) {
     return [x, y];
 }
 
-
-
 function getMousePos(canvas, event) {
     const rect = canvas.getBoundingClientRect();
     return {
@@ -179,9 +187,6 @@ function getMousePos(canvas, event) {
         y: event.clientY - rect.top
     };
 }
-
-
-
 
 function placePiece(chessboard, pieceName, x, y, player) {
     let boardY = y - 1
@@ -205,14 +210,86 @@ function movePiece(chessboard, pieceX, pieceY, targetX, targetY) {
 
 }
 
+function isCheck(chessboard, returnDetails) {
+    let check = false
+    let checkedPlayer = undefined
+	let validCheckMoves = [
+		[0, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0, 0],
+		[0, 0, 0, 0, 0, 0, 0, 0]
+	]
+	
+    for (let y = 1; y <= 8; y++) {
+        for (let x = 1; x <= 8; x++) {
+            let pieceMoves = getPieceMoveCells(chessboard, x, y)
+            if (pieceMoves === undefined) {
+                continue
+            }
+            for (let index = 0; index < pieceMoves.length; index++) {
+                const move = pieceMoves[index];
+                let targetPiece = getPiece(chessboard, move[0], move[1])
+                if (targetPiece !== 0) {
+
+                    if (targetPiece.pieceName == "king") {
+                        check = true
+                        checkedPlayer = targetPiece.player
+                    
+                        
+                    }
+                }
+            }
+        }
+    }
+
+    if (check === true && returnDetails === true) {
+        for (let y = 1; y <= 8; y++) {
+            for (let x = 1; x <= 8; x++) {
+                
+                let pieceMoves = getPieceMoveCells(chessboard, x, y)
+                if (pieceMoves === undefined) {
+                    continue
+                }
+
+                for (let index = 0; index < pieceMoves.length; index++) {
+                    const move = pieceMoves[index];
+                    let simulatedChessboard = cloneBoard(chessboard)
+                    
+					if (getPiece(simulatedChessboard, x, y).player == checkedPlayer) {
+						movePiece(simulatedChessboard, x, y, move[0], move[1])
+					}
+                    
+					let ischeck = isCheck(simulatedChessboard, false)
+					if (!ischeck.check) {
+                        validCheckMoves[y-1][x-1] = move
+                    }
+                    
+                }
+                
+
+            }
+        }
+    }
 
 
-function getPieceMoveCells(chessboard, piece, x, y) {
+
+    return { check, checkedPlayer, validCheckMoves }
+}
+
+function getPieceMoveCells(chessboard, x, y) {
+    const piece = getPiece(chessboard, x, y)
+    if (piece === 0) {
+        return undefined
+    }
     const moveCells = [];
-
     const movementDict = piece.moved ? pieceMoves : pieceFirstMoves;
     const moves = movementDict[piece.pieceName];
-    
+    let pawnCollided = false;
+
     let vectors = moves.vectors;
     let attackVectors = moves.attackVectors
 
@@ -228,6 +305,7 @@ function getPieceMoveCells(chessboard, piece, x, y) {
 
     for (const [dx, dy] of vectors) {
         let steps = 1;
+        if (pawnCollided === true) break;
 
         while (true) {
             const cellX = x + dx * steps;
@@ -238,21 +316,25 @@ function getPieceMoveCells(chessboard, piece, x, y) {
 
             const target = getPiece(chessboard, cellX, cellY);
 
-
             if (target !== 0 && target.player === enemy) {
                 if (piece.pieceName != "pawn") {
                     moveCells.push([cellX, cellY]);
                 }
+                else {
+                    pawnCollided = true;
+                    break;
+                }
                 break;
             }
+            else {
+                if (target !== 0) break;
+                moveCells.push([cellX, cellY]);
 
-            if (target !== 0) break;
+            }
 
 
 
 
-
-            moveCells.push([cellX, cellY]);
 
 
 
@@ -315,10 +397,12 @@ chessboardCanvas.addEventListener('click', function (event) {
         if (turn=="white") {turn = "black"} else {turn = "white"}
         activeMoveCells = []
         selectedPiece = undefined
+        console.log(isCheck(chessboard, true))
+
     }
     else if (piece != 0 && piece.player == turn) {
         selectedPiece = [cellCoords[0], cellCoords[1]]
-        activeMoveCells = getPieceMoveCells(chessboard, piece, selectedPiece[0], selectedPiece[1])
+        activeMoveCells = getPieceMoveCells(chessboard, selectedPiece[0], selectedPiece[1])
     }
     else {
         activeMoveCells = []
@@ -326,7 +410,6 @@ chessboardCanvas.addEventListener('click', function (event) {
     }
 
     render(chessboardCanvas, ctx, chessboard)
-
 });
 
 
