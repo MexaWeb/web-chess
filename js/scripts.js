@@ -1,3 +1,36 @@
+// Warn if overriding existing method
+if(Array.prototype.equals)
+    console.warn("Overriding existing Array.prototype.equals. Possible causes: New API defines the method, there's a framework conflict or you've got double inclusions in your code.");
+// attach the .equals method to Array's prototype to call it on any array
+Array.prototype.equals = function (array) {
+    // if the other array is a falsy value, return
+    if (!array)
+        return false;
+    // if the argument is the same array, we can be sure the contents are same as well
+    if(array === this)
+        return true;
+    // compare lengths - can save a lot of time 
+    if (this.length != array.length)
+        return false;
+
+    for (var i = 0, l=this.length; i < l; i++) {
+        // Check if we have nested arrays
+        if (this[i] instanceof Array && array[i] instanceof Array) {
+            // recurse into the nested arrays
+            if (!this[i].equals(array[i]))
+                return false;       
+        }           
+        else if (this[i] != array[i]) { 
+            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+            return false;   
+        }           
+    }       
+    return true;
+}
+// Hide method from for-in loops
+Object.defineProperty(Array.prototype, "equals", {enumerable: false});
+
+
 const chessboardCanvas = document.getElementById("chessboard")
 
 
@@ -212,21 +245,23 @@ function movePiece(chessboard, pieceX, pieceY, targetX, targetY) {
 
 function isCheck(chessboard, returnDetails) {
     let check = false
+    let checkmate = false
     let checkedPlayer = undefined
 	let validCheckMoves = [
-		[0, 0, 0, 0, 0, 0, 0, 0],
-		[0, 0, 0, 0, 0, 0, 0, 0],
-		[0, 0, 0, 0, 0, 0, 0, 0],
-		[0, 0, 0, 0, 0, 0, 0, 0],
-		[0, 0, 0, 0, 0, 0, 0, 0],
-		[0, 0, 0, 0, 0, 0, 0, 0],
-		[0, 0, 0, 0, 0, 0, 0, 0],
-		[0, 0, 0, 0, 0, 0, 0, 0]
+		[[], [], [], [], [], [], [], []],
+		[[], [], [], [], [], [], [], []],
+		[[], [], [], [], [], [], [], []],
+		[[], [], [], [], [], [], [], []],
+		[[], [], [], [], [], [], [], []],
+		[[], [], [], [], [], [], [], []],
+		[[], [], [], [], [], [], [], []],
+		[[], [], [], [], [], [], [], []]
 	]
 	
     for (let y = 1; y <= 8; y++) {
         for (let x = 1; x <= 8; x++) {
-            let pieceMoves = getPieceMoveCells(chessboard, x, y)
+            let pieceMoves = getPieceMoveCells(chessboard, x, y, undefined, true)
+
             if (pieceMoves === undefined) {
                 continue
             }
@@ -238,8 +273,6 @@ function isCheck(chessboard, returnDetails) {
                     if (targetPiece.pieceName == "king") {
                         check = true
                         checkedPlayer = targetPiece.player
-                    
-                        
                     }
                 }
             }
@@ -250,7 +283,7 @@ function isCheck(chessboard, returnDetails) {
         for (let y = 1; y <= 8; y++) {
             for (let x = 1; x <= 8; x++) {
                 
-                let pieceMoves = getPieceMoveCells(chessboard, x, y)
+                let pieceMoves = getPieceMoveCells(chessboard, x, y, undefined, true)
                 if (pieceMoves === undefined) {
                     continue
                 }
@@ -265,22 +298,42 @@ function isCheck(chessboard, returnDetails) {
                     
 					let ischeck = isCheck(simulatedChessboard, false)
 					if (!ischeck.check) {
-                        validCheckMoves[y-1][x-1] = move
+                        if (validCheckMoves[y-1][x-1] === 0) {
+                            validCheckMoves[y-1][x-1] = []
+                        }
+                        validCheckMoves[y-1][x-1].push(move)
                     }
-                    
+
                 }
-                
 
             }
         }
+        console.log(validCheckMoves)
+        if (validCheckMoves.equals([
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []]
+        ])) {
+            checkmate = true
+        }
     }
 
-
-
-    return { check, checkedPlayer, validCheckMoves }
+    return { check, checkmate, checkedPlayer, validCheckMoves}
 }
 
-function getPieceMoveCells(chessboard, x, y) {
+function getPieceMoveCells(chessboard, x, y, check, ignorecheck=false) {
+    if (check !== undefined) {
+        if (check.check === true) {
+            let moveCells = check.validCheckMoves[y-1][x-1]
+            return moveCells
+        }
+    }
+
     const piece = getPiece(chessboard, x, y)
     if (piece === 0) {
         return undefined
@@ -318,7 +371,19 @@ function getPieceMoveCells(chessboard, x, y) {
 
             if (target !== 0 && target.player === enemy) {
                 if (piece.pieceName != "pawn") {
-                    moveCells.push([cellX, cellY]);
+                    if (!ignorecheck) {
+                        let simulatedChessboard = cloneBoard(chessboard)
+                        movePiece(simulatedChessboard, x, y, cellX, cellY)
+                        let check = isCheck(simulatedChessboard, true)
+
+                        if (!check.check || check.checkedPlayer !== piece.player) {
+                            moveCells.push([cellX, cellY]);
+                        }
+                    }
+                    else {
+                        moveCells.push([cellX, cellY]);
+                    }
+
                 }
                 else {
                     pawnCollided = true;
@@ -328,8 +393,19 @@ function getPieceMoveCells(chessboard, x, y) {
             }
             else {
                 if (target !== 0) break;
-                moveCells.push([cellX, cellY]);
+                    if (!ignorecheck) {
+                        let simulatedChessboard = cloneBoard(chessboard)
+                        movePiece(simulatedChessboard, x, y, cellX, cellY)
+                        let check = isCheck(simulatedChessboard, true)
 
+        
+                        if (!check.check || check.checkedPlayer !== piece.player) {
+                            moveCells.push([cellX, cellY]);
+                        }    
+                    }
+                    else {
+                        moveCells.push([cellX, cellY]);
+                    }
             }
 
 
@@ -372,6 +448,7 @@ function getPieceMoveCells(chessboard, x, y) {
         }
     }
 
+
     return moveCells;
 }
 
@@ -398,11 +475,13 @@ chessboardCanvas.addEventListener('click', function (event) {
         activeMoveCells = []
         selectedPiece = undefined
         console.log(isCheck(chessboard, true))
-
     }
+
     else if (piece != 0 && piece.player == turn) {
         selectedPiece = [cellCoords[0], cellCoords[1]]
-        activeMoveCells = getPieceMoveCells(chessboard, selectedPiece[0], selectedPiece[1])
+        const check = isCheck(chessboard, true)
+
+        activeMoveCells = getPieceMoveCells(chessboard, selectedPiece[0], selectedPiece[1], check, false)
     }
     else {
         activeMoveCells = []
@@ -411,6 +490,8 @@ chessboardCanvas.addEventListener('click', function (event) {
 
     render(chessboardCanvas, ctx, chessboard)
 });
+
+
 
 
 
@@ -463,4 +544,6 @@ placePiece(chessboard, "rook", 8, 1, "black")
 
 
 render(chessboardCanvas, ctx, chessboard)
+
+
 console.log(chessboard)
