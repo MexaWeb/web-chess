@@ -308,7 +308,6 @@ function isCheck(chessboard, returnDetails) {
 
             }
         }
-        console.log(validCheckMoves)
         if (validCheckMoves.equals([
             [[], [], [], [], [], [], [], []],
             [[], [], [], [], [], [], [], []],
@@ -325,6 +324,45 @@ function isCheck(chessboard, returnDetails) {
 
     return { check, checkmate, checkedPlayer, validCheckMoves}
 }
+function playerHasAnyMoves(chessboard, player) {
+    for (let y = 1; y <= 8; y++) {
+        for (let x = 1; x <= 8; x++) {
+            const piece = getPiece(chessboard, x, y);
+            if (piece === 0 || piece.player !== player) continue;
+            const moves = getPieceMoveCells(chessboard, x, y, isCheck(chessboard, true));
+            if (moves.length === 0) continue;
+
+            for (const move of moves) {
+                const simulatedBoard = cloneBoard(chessboard);
+                movePiece(simulatedBoard, x, y, move[0], move[1]);
+
+                const check = isCheck(simulatedBoard, true);
+                if (!check.check || check.checkedPlayer !== player) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+
+function isStalemate(chessboard, isCheckmateOrCheck) {
+    whiteHasMoves = playerHasAnyMoves(chessboard, "white");
+    blackHasMoves = playerHasAnyMoves(chessboard, "black");
+    let stalemate
+
+    if (isCheckmateOrCheck === false && (blackHasMoves == false || whiteHasMoves === false)) {
+        stalemate = true
+    }
+    else {
+        stalemate = false
+    }
+
+    return stalemate
+}
+
 
 function getPieceMoveCells(chessboard, x, y, check, ignorecheck=false) {
     if (check !== undefined) {
@@ -474,7 +512,9 @@ chessboardCanvas.addEventListener('click', function (event) {
         if (turn=="white") {turn = "black"} else {turn = "white"}
         activeMoveCells = []
         selectedPiece = undefined
-        console.log(isCheck(chessboard, true))
+        let check = isCheck(chessboard, true)
+        console.log(check)
+        console.log("stalemate: ", isStalemate(chessboard, check.checkmate || check.check))
     }
 
     else if (piece != 0 && piece.player == turn) {
@@ -502,48 +542,48 @@ chessboardCanvas.addEventListener('click', function (event) {
 
 
 
-placePiece(chessboard, "pawn", 1, 7, "white")
-placePiece(chessboard, "pawn", 2, 7, "white")
-placePiece(chessboard, "pawn", 3, 7, "white")
-placePiece(chessboard, "pawn", 4, 7, "white")
-placePiece(chessboard, "pawn", 5, 7, "white")
-placePiece(chessboard, "pawn", 6, 7, "white")
-placePiece(chessboard, "pawn", 7, 7, "white")
-placePiece(chessboard, "pawn", 8, 7, "white")
+// placePiece(chessboard, "pawn", 1, 7, "white")
+// placePiece(chessboard, "pawn", 2, 7, "white")
+// placePiece(chessboard, "pawn", 3, 7, "white")
+// placePiece(chessboard, "pawn", 4, 7, "white")
+// placePiece(chessboard, "pawn", 5, 7, "white")
+// placePiece(chessboard, "pawn", 6, 7, "white")
+// placePiece(chessboard, "pawn", 7, 7, "white")
+// placePiece(chessboard, "pawn", 8, 7, "white")
 
 placePiece(chessboard, "rook", 1, 8, "white")
-placePiece(chessboard, "knight", 2, 8, "white")
-placePiece(chessboard, "bishop", 3, 8, "white")
-placePiece(chessboard, "queen", 4, 8, "white")
+// placePiece(chessboard, "knight", 2, 8, "white")
+// placePiece(chessboard, "bishop", 3, 8, "white")
+// placePiece(chessboard, "queen", 4, 8, "white")
 placePiece(chessboard, "king", 5, 8, "white")
-placePiece(chessboard, "bishop", 6, 8, "white")
-placePiece(chessboard, "knight", 7, 8, "white")
+// placePiece(chessboard, "bishop", 6, 8, "white")
+// placePiece(chessboard, "knight", 7, 8, "white")
 placePiece(chessboard, "rook", 8, 8, "white")
+placePiece(chessboard, "rook", 6, 8, "white")
+placePiece(chessboard, "rook", 4, 8, "white")
 
 
 
 
 
-placePiece(chessboard, "pawn", 1, 2, "black")
-placePiece(chessboard, "pawn", 2, 2, "black")
-placePiece(chessboard, "pawn", 3, 2, "black")
-placePiece(chessboard, "pawn", 4, 2, "black")
-placePiece(chessboard, "pawn", 5, 2, "black")
-placePiece(chessboard, "pawn", 6, 2, "black")
-placePiece(chessboard, "pawn", 7, 2, "black")
-placePiece(chessboard, "pawn", 8, 2, "black")
+// placePiece(chessboard, "pawn", 1, 2, "black")
+// placePiece(chessboard, "pawn", 2, 2, "black")
+// placePiece(chessboard, "pawn", 3, 2, "black")
+// placePiece(chessboard, "pawn", 4, 2, "black")
+// placePiece(chessboard, "pawn", 5, 2, "black")
+// placePiece(chessboard, "pawn", 6, 2, "black")
+// placePiece(chessboard, "pawn", 7, 2, "black")
+// placePiece(chessboard, "pawn", 8, 2, "black")
 
-placePiece(chessboard, "rook", 1, 1, "black")
-placePiece(chessboard, "knight", 2, 1, "black")
-placePiece(chessboard, "bishop", 3, 1, "black")
-placePiece(chessboard, "queen", 4, 1, "black")
+// placePiece(chessboard, "rook", 1, 1, "black")
+// placePiece(chessboard, "knight", 2, 1, "black")
+// placePiece(chessboard, "bishop", 3, 1, "black")
+// placePiece(chessboard, "queen", 4, 1, "black")
 placePiece(chessboard, "king", 5, 1, "black")
-placePiece(chessboard, "bishop", 6, 1, "black")
-placePiece(chessboard, "knight", 7, 1, "black")
-placePiece(chessboard, "rook", 8, 1, "black")
+// placePiece(chessboard, "bishop", 6, 1, "black")
+// placePiece(chessboard, "knight", 7, 1, "black")
+// placePiece(chessboard, "rook", 8, 1, "black")
 
 
 render(chessboardCanvas, ctx, chessboard)
 
-
-console.log(chessboard)
