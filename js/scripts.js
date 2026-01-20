@@ -131,7 +131,7 @@ function cloneBoard(board) {
 }
 
 
-function render(canvas, ctx, chessboard) {
+function render(canvas, ctx, chessboard, highlightedCells=[]) {
 
     canvas.width = canvas.offsetWidth
     canvas.height = canvas.offsetHeight
@@ -141,6 +141,7 @@ function render(canvas, ctx, chessboard) {
         for (let x = 0; x < 8; x++) {
 
 
+
             if ((x + y) % 2 === 0) {
                 ctx.fillStyle = "rgba(255, 218, 203, 1)"
             }
@@ -148,6 +149,12 @@ function render(canvas, ctx, chessboard) {
                 ctx.fillStyle = "rgba(114, 80, 67, 1)"
             }
 
+            for (let index = 0; index < highlightedCells.length; index++) {
+                const coordinates = highlightedCells[index];
+                if (x == coordinates[0]-1 && y == coordinates[1]-1) {
+                    ctx.fillStyle = "rgba(255, 50, 50, 1)"
+                }
+            }
 
             ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
 
@@ -247,6 +254,9 @@ function isCheck(chessboard, returnDetails) {
     let check = false
     let checkmate = false
     let checkedPlayer = undefined
+    let attackingPieceCoordinates = undefined
+    let kingCoordinates = undefined
+
 	let validCheckMoves = [
 		[[], [], [], [], [], [], [], []],
 		[[], [], [], [], [], [], [], []],
@@ -272,7 +282,9 @@ function isCheck(chessboard, returnDetails) {
 
                     if (targetPiece.pieceName == "king") {
                         check = true
+                        attackingPieceCoordinates = [x, y]
                         checkedPlayer = targetPiece.player
+                        kingCoordinates = [move[0], move[1]]
                     }
                 }
             }
@@ -322,8 +334,9 @@ function isCheck(chessboard, returnDetails) {
         }
     }
 
-    return { check, checkmate, checkedPlayer, validCheckMoves}
+    return { check, checkmate, checkedPlayer, attackingPieceCoordinates, kingCoordinates, validCheckMoves}
 }
+
 function playerHasAnyMoves(chessboard, player) {
     for (let y = 1; y <= 8; y++) {
         for (let x = 1; x <= 8; x++) {
@@ -499,22 +512,32 @@ function showMoves(canvas, ctx, cells) {
 }
 
 window.addEventListener('resize', function (e) {
-    render(chessboardCanvas, ctx, chessboard)
+    render(chessboardCanvas, ctx, chessboard, highlightedCells)
 })
+
+
+let highlightedCells = []
 
 chessboardCanvas.addEventListener('click', function (event) {
     const mousePos = getMousePos(chessboardCanvas, event);
     let cellCoords = pixelToCellCoordinates(chessboardCanvas, mousePos.x, mousePos.y)
     let piece = getPiece(chessboard, cellCoords[0], cellCoords[1])
-
+    
     if ((activeMoveCells.some(c => c[0] === cellCoords[0] && c[1] === cellCoords[1]))) {
         movePiece(chessboard, selectedPiece[0], selectedPiece[1], cellCoords[0], cellCoords[1])
         if (turn=="white") {turn = "black"} else {turn = "white"}
         activeMoveCells = []
         selectedPiece = undefined
-        let check = isCheck(chessboard, true)
-        console.log(check)
-        console.log("stalemate: ", isStalemate(chessboard, check.checkmate || check.check))
+        let checkInfo = isCheck(chessboard, true)
+        if (checkInfo.check) {
+            highlightedCells.push(checkInfo.attackingPieceCoordinates)
+            highlightedCells.push(checkInfo.kingCoordinates)
+        } else {
+            highlightedCells = []
+        }
+
+        console.log(checkInfo)
+        console.log("stalemate: ", isStalemate(chessboard, checkInfo.checkmate || checkInfo.check))
     }
 
     else if (piece != 0 && piece.player == turn) {
@@ -528,7 +551,7 @@ chessboardCanvas.addEventListener('click', function (event) {
         selectedPiece = undefined
     }
 
-    render(chessboardCanvas, ctx, chessboard)
+    render(chessboardCanvas, ctx, chessboard, highlightedCells)
 });
 
 
@@ -542,48 +565,47 @@ chessboardCanvas.addEventListener('click', function (event) {
 
 
 
-// placePiece(chessboard, "pawn", 1, 7, "white")
-// placePiece(chessboard, "pawn", 2, 7, "white")
-// placePiece(chessboard, "pawn", 3, 7, "white")
-// placePiece(chessboard, "pawn", 4, 7, "white")
-// placePiece(chessboard, "pawn", 5, 7, "white")
-// placePiece(chessboard, "pawn", 6, 7, "white")
-// placePiece(chessboard, "pawn", 7, 7, "white")
-// placePiece(chessboard, "pawn", 8, 7, "white")
+placePiece(chessboard, "pawn", 1, 7, "white")
+placePiece(chessboard, "pawn", 2, 7, "white")
+placePiece(chessboard, "pawn", 3, 7, "white")
+placePiece(chessboard, "pawn", 4, 7, "white")
+placePiece(chessboard, "pawn", 5, 7, "white")
+placePiece(chessboard, "pawn", 6, 7, "white")
+placePiece(chessboard, "pawn", 7, 7, "white")
+placePiece(chessboard, "pawn", 8, 7, "white")
 
 placePiece(chessboard, "rook", 1, 8, "white")
-// placePiece(chessboard, "knight", 2, 8, "white")
-// placePiece(chessboard, "bishop", 3, 8, "white")
-// placePiece(chessboard, "queen", 4, 8, "white")
+placePiece(chessboard, "knight", 2, 8, "white")
+placePiece(chessboard, "bishop", 3, 8, "white")
+placePiece(chessboard, "queen", 4, 8, "white")
 placePiece(chessboard, "king", 5, 8, "white")
-// placePiece(chessboard, "bishop", 6, 8, "white")
-// placePiece(chessboard, "knight", 7, 8, "white")
+placePiece(chessboard, "bishop", 6, 8, "white")
+placePiece(chessboard, "knight", 7, 8, "white")
 placePiece(chessboard, "rook", 8, 8, "white")
-placePiece(chessboard, "rook", 6, 8, "white")
-placePiece(chessboard, "rook", 4, 8, "white")
+// placePiece(chessboard, "rook", 6, 8, "white")
+// placePiece(chessboard, "rook", 4, 8, "white")
 
 
 
 
 
-// placePiece(chessboard, "pawn", 1, 2, "black")
-// placePiece(chessboard, "pawn", 2, 2, "black")
-// placePiece(chessboard, "pawn", 3, 2, "black")
-// placePiece(chessboard, "pawn", 4, 2, "black")
-// placePiece(chessboard, "pawn", 5, 2, "black")
-// placePiece(chessboard, "pawn", 6, 2, "black")
-// placePiece(chessboard, "pawn", 7, 2, "black")
-// placePiece(chessboard, "pawn", 8, 2, "black")
+placePiece(chessboard, "pawn", 1, 2, "black")
+placePiece(chessboard, "pawn", 2, 2, "black")
+placePiece(chessboard, "pawn", 3, 2, "black")
+placePiece(chessboard, "pawn", 4, 2, "black")
+placePiece(chessboard, "pawn", 5, 2, "black")
+placePiece(chessboard, "pawn", 6, 2, "black")
+placePiece(chessboard, "pawn", 7, 2, "black")
+placePiece(chessboard, "pawn", 8, 2, "black")
 
-// placePiece(chessboard, "rook", 1, 1, "black")
-// placePiece(chessboard, "knight", 2, 1, "black")
-// placePiece(chessboard, "bishop", 3, 1, "black")
-// placePiece(chessboard, "queen", 4, 1, "black")
+placePiece(chessboard, "rook", 1, 1, "black")
+placePiece(chessboard, "knight", 2, 1, "black")
+placePiece(chessboard, "bishop", 3, 1, "black")
+placePiece(chessboard, "queen", 4, 1, "black")
 placePiece(chessboard, "king", 5, 1, "black")
-// placePiece(chessboard, "bishop", 6, 1, "black")
-// placePiece(chessboard, "knight", 7, 1, "black")
-// placePiece(chessboard, "rook", 8, 1, "black")
+placePiece(chessboard, "bishop", 6, 1, "black")
+placePiece(chessboard, "knight", 7, 1, "black")
+placePiece(chessboard, "rook", 8, 1, "black")
 
 
-render(chessboardCanvas, ctx, chessboard)
-
+render(chessboardCanvas, ctx, chessboard, highlightedCells)
