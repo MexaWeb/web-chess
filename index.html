@@ -10,8 +10,22 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
+    <div id="popup" class="popup">
+        <div class="window">
+            <div class="buttons">
+                <button onclick="restartGame()" class="restartgame-popup-btn"><i class="fa-solid fa-rotate-right"></i></button>
+                <button onclick="closePopup()" class="close-popup-btn"><i class="fa-solid fa-x"></i></button>
+            </div>
+            <h1><span class="white">white won</span><span class="black">black won</span><span class="stalemate">stalemate</span></h1>
+            
+
+        </div>
+    </div>
     <main>
-        <canvas id="chessboard"></canvas>
+        <div class="game">
+            <canvas id="chessboard"></canvas>
+            <button onclick="restartGame()" class="restartgame-popup-btn"><i class="fa-solid fa-rotate-right"></i></button>
+        </div>
     </main>
     <script src="js/scripts.js"></script>
 </body>
