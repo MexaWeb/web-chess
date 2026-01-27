@@ -1,37 +1,33 @@
-// Warn if overriding existing method
 if(Array.prototype.equals)
     console.warn("Overriding existing Array.prototype.equals. Possible causes: New API defines the method, there's a framework conflict or you've got double inclusions in your code.");
-// attach the .equals method to Array's prototype to call it on any array
+
 Array.prototype.equals = function (array) {
-    // if the other array is a falsy value, return
     if (!array)
         return false;
-    // if the argument is the same array, we can be sure the contents are same as well
+
     if(array === this)
         return true;
-    // compare lengths - can save a lot of time 
+
     if (this.length != array.length)
         return false;
 
     for (var i = 0, l=this.length; i < l; i++) {
-        // Check if we have nested arrays
         if (this[i] instanceof Array && array[i] instanceof Array) {
-            // recurse into the nested arrays
             if (!this[i].equals(array[i]))
                 return false;       
         }           
         else if (this[i] != array[i]) { 
-            // Warning - two different object instances will never be equal: {x:20} != {x:20}
             return false;   
         }           
     }       
     return true;
 }
-// Hide method from for-in loops
 Object.defineProperty(Array.prototype, "equals", {enumerable: false});
 
 
 const chessboardCanvas = document.getElementById("chessboard")
+const popup = document.getElementById("popup")
+
 
 
 const ctx = chessboardCanvas.getContext("2d");
@@ -40,18 +36,6 @@ let selectedPiece
 let activeMoveCells = []
 let turn = "white"
 let check = undefined
-
-
-const numPieceMap = {
-    0: "",
-    "pawn": "\uf443",
-    "rook": "\uf447",
-    "knight": "\uf441",
-    "bishop": "\uf43a",
-    "queen": "\uf445",
-    "king": "\uf43f"
-}
-
 let chessboard = [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -62,6 +46,16 @@ let chessboard = [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0]
 ]
+
+const numPieceMap = {
+    0: "",
+    "pawn": "\uf443",
+    "rook": "\uf447",
+    "knight": "\uf441",
+    "bishop": "\uf43a",
+    "queen": "\uf445",
+    "king": "\uf43f"
+}
 
 const pieceMoves = {
     "pawn": {
@@ -537,7 +531,11 @@ chessboardCanvas.addEventListener('click', function (event) {
         }
 
         console.log(checkInfo)
-        console.log("stalemate: ", isStalemate(chessboard, checkInfo.checkmate || checkInfo.check))
+        if (isStalemate(chessboard, checkInfo.checkmate || checkInfo.check)) {
+            showPopup("stalemate")
+        } else if (checkInfo.checkmate) {
+            showPopup(checkInfo.checkedPlayer == "black" ? "white" : "black")
+        }
     }
 
     else if (piece != 0 && piece.player == turn) {
@@ -564,48 +562,102 @@ chessboardCanvas.addEventListener('click', function (event) {
 
 
 
+function closePopup() {
+    popup.classList.remove("whitewon");
+    popup.classList.remove("blackwon");
+    popup.classList.remove("stalemate");
+    
+    setTimeout(function () {
+        popup.style.display = "none"
+    }, 300)
+}
 
-placePiece(chessboard, "pawn", 1, 7, "white")
-placePiece(chessboard, "pawn", 2, 7, "white")
-placePiece(chessboard, "pawn", 3, 7, "white")
-placePiece(chessboard, "pawn", 4, 7, "white")
-placePiece(chessboard, "pawn", 5, 7, "white")
-placePiece(chessboard, "pawn", 6, 7, "white")
-placePiece(chessboard, "pawn", 7, 7, "white")
-placePiece(chessboard, "pawn", 8, 7, "white")
+function restartGame() {
+    closePopup()
 
-placePiece(chessboard, "rook", 1, 8, "white")
-placePiece(chessboard, "knight", 2, 8, "white")
-placePiece(chessboard, "bishop", 3, 8, "white")
-placePiece(chessboard, "queen", 4, 8, "white")
-placePiece(chessboard, "king", 5, 8, "white")
-placePiece(chessboard, "bishop", 6, 8, "white")
-placePiece(chessboard, "knight", 7, 8, "white")
-placePiece(chessboard, "rook", 8, 8, "white")
-// placePiece(chessboard, "rook", 6, 8, "white")
-// placePiece(chessboard, "rook", 4, 8, "white")
+    selectedPiece = null
+    activeMoveCells = []
+    turn = "white"
+    check = undefined
+    chessboard = [
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0]
+    ]
 
+        
+    placePiece(chessboard, "pawn", 1, 7, "white")
+    placePiece(chessboard, "pawn", 2, 7, "white")
+    placePiece(chessboard, "pawn", 3, 7, "white")
+    placePiece(chessboard, "pawn", 4, 7, "white")
+    placePiece(chessboard, "pawn", 5, 7, "white")
+    placePiece(chessboard, "pawn", 6, 7, "white")
+    placePiece(chessboard, "pawn", 7, 7, "white")
+    placePiece(chessboard, "pawn", 8, 7, "white")
 
-
-
-
-placePiece(chessboard, "pawn", 1, 2, "black")
-placePiece(chessboard, "pawn", 2, 2, "black")
-placePiece(chessboard, "pawn", 3, 2, "black")
-placePiece(chessboard, "pawn", 4, 2, "black")
-placePiece(chessboard, "pawn", 5, 2, "black")
-placePiece(chessboard, "pawn", 6, 2, "black")
-placePiece(chessboard, "pawn", 7, 2, "black")
-placePiece(chessboard, "pawn", 8, 2, "black")
-
-placePiece(chessboard, "rook", 1, 1, "black")
-placePiece(chessboard, "knight", 2, 1, "black")
-placePiece(chessboard, "bishop", 3, 1, "black")
-placePiece(chessboard, "queen", 4, 1, "black")
-placePiece(chessboard, "king", 5, 1, "black")
-placePiece(chessboard, "bishop", 6, 1, "black")
-placePiece(chessboard, "knight", 7, 1, "black")
-placePiece(chessboard, "rook", 8, 1, "black")
+    placePiece(chessboard, "rook", 1, 8, "white")
+    placePiece(chessboard, "knight", 2, 8, "white")
+    placePiece(chessboard, "bishop", 3, 8, "white")
+    placePiece(chessboard, "queen", 4, 8, "white")
+    placePiece(chessboard, "king", 5, 8, "white")
+    placePiece(chessboard, "bishop", 6, 8, "white")
+    placePiece(chessboard, "knight", 7, 8, "white")
+    placePiece(chessboard, "rook", 8, 8, "white")
 
 
-render(chessboardCanvas, ctx, chessboard, highlightedCells)
+    placePiece(chessboard, "pawn", 1, 2, "black")
+    placePiece(chessboard, "pawn", 2, 2, "black")
+    placePiece(chessboard, "pawn", 3, 2, "black")
+    placePiece(chessboard, "pawn", 4, 2, "black")
+    placePiece(chessboard, "pawn", 5, 2, "black")
+    placePiece(chessboard, "pawn", 6, 2, "black")
+    placePiece(chessboard, "pawn", 7, 2, "black")
+    placePiece(chessboard, "pawn", 8, 2, "black")
+
+    placePiece(chessboard, "rook", 1, 1, "black")
+    placePiece(chessboard, "knight", 2, 1, "black")
+    placePiece(chessboard, "bishop", 3, 1, "black")
+    placePiece(chessboard, "queen", 4, 1, "black")
+    placePiece(chessboard, "king", 5, 1, "black")
+    placePiece(chessboard, "bishop", 6, 1, "black")
+    placePiece(chessboard, "knight", 7, 1, "black")
+    placePiece(chessboard, "rook", 8, 1, "black")
+    
+    render(chessboardCanvas, ctx, chessboard, highlightedCells)
+}
+
+function showPopup(whoWon) {
+    switch (whoWon) {
+        case "white":
+            popup.style.display = null
+            setTimeout(function(){
+                popup.classList.add("whitewon");
+            }, 300)
+            break;
+
+        case "black":
+            popup.style.display = null
+            setTimeout(function(){
+                popup.classList.add("blackwon");
+            }, 300)
+            break;
+
+        case "stalemate":
+            popup.style.display = null
+            setTimeout(function(){
+                popup.classList.add("stalemate");
+            }, 300)
+            break;
+    }
+}
+
+
+
+
+
+restartGame()
