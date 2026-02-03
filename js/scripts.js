@@ -46,6 +46,7 @@ let chessboard = [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0]
 ]
+let highlightedCells = []
 
 const numPieceMap = {
     0: "",
@@ -508,9 +509,6 @@ function showMoves(canvas, ctx, cells) {
 window.addEventListener('resize', function (e) {
     render(chessboardCanvas, ctx, chessboard, highlightedCells)
 })
-
-
-let highlightedCells = []
 
 chessboardCanvas.addEventListener('click', function (event) {
     const mousePos = getMousePos(chessboardCanvas, event);
